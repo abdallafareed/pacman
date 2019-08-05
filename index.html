@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<style>
+		body {
+			font-family: Arial;
+		}
+		.text{
+			font-size:15px;
+
+			color: black;
+
+
+		}
+
+		/* Style the tab */
+		.tablinks {
+			overflow: hidden;
+
+			background-color: #555;
+			color: white;
+			float: left;
+			border: none;
+			outline: none;
+			cursor: pointer;
+			padding: 5px 10px;
+			font-size: 17px;
+			width: 7%;
+		}
+
+		/* Style the buttons inside the tab */
+		.tab button {
+			background-color: darkgray;
+			color: black;
+			float: left;
+			border: none;
+			outline: none;
+			cursor: pointer;
+			padding: 14px 16px;
+			transition: 0.3s;
+			font-size: 17px;
+		}
+
+		/* Change background color of buttons on hover */
+		.tab button:hover {
+			background-color: black;
+			color: white;
+
+		}
+
+		/* Create an active/current tablink class */
+		.tab button.active {
+			background-color: #ccc;
+		}
+
+		/* Style the tab content */
+
+		.tabcontent {
+			color: white;
+			display: none;
+			padding: 100px 20px;
+			height: 100%;
+		}
+
+		#Welcome {
+			background-color: red;
+		}
+
+		#Register {
+			background-color: green;
+		}
+
+		#LogIn {
+			background-color: purple;
+		}
+
+		#About {
+			background-color: orange;
+		}
+
+		#Settings {
+			background-color: purple;
+		}
+
+		.button {
+			background-color: blue;
+
+		}
+	</style>
+
+
+
+
+	<link rel="stylesheet" type="text/css" href="css/pacman.css" />
+	<link rel="stylesheet" type="text/css" href="css/pacman-home.css" />
+
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<!--<script type="text/javascript" src="js/jquery-mobile.js"></script>-->
+	<script type="text/javascript" src="js/jquery-buzz.js"></script>
+
+	<script type="text/javascript" src="js/game.js"></script>
+	<script type="text/javascript" src="js/tools.js"></script>
+	<script type="text/javascript" src="js/board.js"></script>
+	<script type="text/javascript" src="js/paths.js"></script>
+	<script type="text/javascript" src="js/bubbles.js"></script>
+	<script type="text/javascript" src="js/fruits.js"></script>
+	<script type="text/javascript" src="js/pacman.js"></script>
+	<script type="text/javascript" src="js/ghosts.js"></script>
+	<script type="text/javascript" src="js/home.js"></script>
+	<script type="text/javascript" src="js/sound.js"></script>
+
+	<script type="text/javascript">
+
+		function simulateKeyup(code) {
+			var e = jQuery.Event("keyup");
+			e.keyCode = code;
+			jQuery('body').trigger(e);
+		}
+		function simulateKeydown(code) {
+			var e = jQuery.Event("keydown");
+			e.keyCode = code;
+			jQuery('body').trigger(e);
+		}
+
+		$(document).ready(function () {
+			
+			loadAllSound();
+
+			HELP_TIMER = setInterval('blinkHelp()', HELP_DELAY);
+
+			initHome();
+
+			$(".sound").click(function (e) {
+				e.stopPropagation();
+
+				var sound = $(this).attr("data-sound");
+				if (sound === "on") {
+					$(".sound").attr("data-sound", "off");
+					$(".sound").find("img").attr("src", "img/sound-off.png");
+					GROUP_SOUND.mute();
+				} else {
+					$(".sound").attr("data-sound", "on");
+					$(".sound").find("img").attr("src", "img/sound-on.png");
+					GROUP_SOUND.unmute();
+				}
+			});
+
+			$(".help-button, #help").click(function (e) {
+				e.stopPropagation();
+				if (!PACMAN_DEAD && !LOCK && !GAMEOVER) {
+					if ($('#help').css("display") === "none") {
+						$('#help').fadeIn("slow");
+						$(".help-button").hide();
+						if ($("#panel").css("display") !== "none") {
+							pauseGame();
+						}
+					} else {
+						$('#help').fadeOut("slow");
+						$(".help-button").show();
+					}
+				}
+			});
+
+		/*	$(".github,.putchu").click(function (e) {
+				e.stopPropagation();
+			});*/
+
+			$("#home").on("click touchstart", function (e) {
+				if ($('#help').css("display") === "none") {
+					e.preventDefault();
+					simulateKeydown(13);
+				}
+			});
+			$("#control-up, #control-up-second, #control-up-big").on("mousedown touchstart", function (e) {
+				e.preventDefault();
+				simulateKeydown(38);
+				simulateKeyup(13);
+			});
+			$("#control-down, #control-down-second, #control-down-big").on("mousedown touchstart", function (e) {
+				e.preventDefault();
+				simulateKeydown(40);
+				simulateKeyup(13);
+			});
+			$("#control-left, #control-left-big").on("mousedown touchstart", function (e) {
+				e.preventDefault();
+				simulateKeydown(37);
+				simulateKeyup(13);
+			});
+			$("#control-right, #control-right-big").on("mousedown touchstart", function (e) {
+				e.preventDefault();
+				simulateKeydown(39);
+				simulateKeyup(13);
+			});
+
+
+			$("body").keyup(function (e) {
+				KEYDOWN = false;
+			});
+
+			$("body").keydown(function (e) {
+
+				if (HOME) {
+
+					//initGame(true);
+
+				} else {
+					//if (!KEYDOWN) { 
+					KEYDOWN = true;
+					if (PACMAN_DEAD && !LOCK) {
+						erasePacman();
+						resetPacman();
+						drawPacman();
+
+						eraseGhosts();
+						resetGhosts();
+						drawGhosts();
+						moveGhosts();
+
+						blinkSuperBubbles();
+
+					} else if (e.keyCode >= 37 && e.keyCode <= 40 && !PAUSE && !PACMAN_DEAD && !LOCK) {
+						if (e.keyCode === 39) {
+							movePacman(1);
+						} else if (e.keyCode === 40) {
+							movePacman(2);
+						} else if (e.keyCode === 37) {
+							movePacman(3);
+						} else if (e.keyCode === 38) {
+							movePacman(4);
+						}
+					} else if (e.keyCode === 68 && !PAUSE) {
+						/*if ( $("#canvas-paths").css("display") === "none" ) { 
+							$("#canvas-paths").show();
+						} else { 
+							$("#canvas-paths").hide();
+						}*/
+					} else if (e.keyCode === 80 && !PACMAN_DEAD && !LOCK) {
+						if (PAUSE) {
+							resumeGame();
+						} else {
+							pauseGame();
+						}
+					} else if (GAMEOVER) {
+						initHome();
+					}
+					//}
+				}
+			});
+		});
+	</script>
+	<script>
+		function openPage(pageName, elmnt, color) {
+			var i, tabcontent, tablinks;
+			tabcontent = document.getElementsByClassName("tabcontent");
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
+			}
+			tablinks = document.getElementsByClassName("tablink");
+			for (i = 0; i < tablinks.length; i++) {
+				tablinks[i].style.backgroundColor = "";
+			}
+			document.getElementById(pageName).style.display = "block";
+			elmnt.style.backgroundColor = color;
+			document.getElementById("defaultOpen").click();
+		}
+
+		 // Name and Password from the register-form
+
+
+// storing input from register-form
+function store() {
+	var name = document.getElementById('name');
+	var pw = document.getElementById('pw');
+		console.log(name.value);
+		localStorage.setItem('name', name.value);
+		localStorage.setItem('pw', pw.value);
+	}
+	
+	// check if stored data from register-form is equal to entered data in the   login-form
+	function check() {
+	  var name = document.getElementById('name');
+	var pw = document.getElementById('pw');
+	console.log("lognin");
+		// stored data from the register-form
+		var storedName = localStorage.getItem('name');
+		var storedPw = localStorage.getItem('pw');
+	
+		// entered data from the login-form
+		var userName = document.getElementById('userName');
+		var userPw = document.getElementById('userPw');
+	
+		// check if stored data from register-form is equal to data from login form
+		if(userName.value == storedName && userPw.value == storedPw) {
+			tabcontent = document.getElementsByClassName("tabcontent");
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
+			}
+		$(".putchu").text(userName.value);
+		initGame(true);
+		}else {
+			alert('Wrong Credentials.');
+		}
+	}
+	</script>
+
+	<title>Pac-Man</title>
+
+</head>
+
+<body>
+
+	<button class="tablinks" style="font-size:15px;" onclick="openPage('Welcome', this, 'red')">Welcome</button>
+	<button class="tablinks" style="font-size:15px;" onclick="openPage( 'Register',this, 'green')">Register</button>
+	<button class="tablinks" style="font-size:15px;" onclick="openPage( 'LogIn' ,this, 'purple')">LogIn</button>
+	<button class="tablinks" style="font-size:15px;" onclick="openPage( 'About',this, 'orange')">About</button>
+
+
+	
+	
+	
+	
+	
+	
+	<!-- Tab content -->
+	<div id="Welcome" class="tabcontent">
+		<h3>Welcome</h3>
+		<button class="tablinks" style="font-size:15px;" onclick="openPage( 'LogIn' ,this, 'blue')">LogIn</button>
+		<button class="tablinks" style="font-size:15px;" onclick="openPage( 'Register',this, 'green')">Register</button> </p>
+		</p>
+	
+	</div>
+	
+	
+	<div id="Register" class="tabcontent">
+		<h3>Register </h3>
+		<form>
+			<font size="3" color="red">This is some text!</font>
+			Username:<br>
+			<input id="name"class="text" style="font-size:15px;" type="text" name="username"><br>
+			Password:<br>
+			<input id="pw" class="text" type="text" name="Password"><br>
+			First Name:<br>
+			<input class="text" type="text" name="First Name"><br>
+			Last Name:<br>
+			<input class="text"  type="text" name="Last Name"><br>
+			Email:<br>
+			<input class="text"  type="text" name="Email"><br>
+	
+			DOB:<br>
+			<input class="text" type="date" name="bday">
+			<p><button type="button" class="button" style="font-size:15px;" onClick="store()">Register</button></p>
+		</form>
+	</div>
+	
+	<div id="LogIn" class="tabcontent">
+		<h3>LogIn</h3>
+		<form>
+			Username:<br>
+			<input id="userName" class="text" type="text" name="username"><br>
+			Password:<br>
+			<input id="userPw" class="text" type="text" name="Password"><br>
+			<p><button type="button" class="button" style="font-size:15px;" onClick="check()">Submit </button></p>
+		</form>
+	</div>
+	
+	<div id="About" class="tabcontent">
+		<h3>About</h3>
+		<form>
+	
+		</form>
+	</div>
+	<div id="Settings" class="tabcontent">
+		<h3>Change Settings</h3>
+		<form>
+			<p><button class="tablinks" onclick="openCity(event, 'LogIn')">Set The Game Buttons</button> </p>
+			Number of balls:
+			<input id="lblScore" type="text" />
+			<p><button class="tablinks" onclick="openCity(event, 'LogIn')">Set colors for balls </button> </p>
+			Set time:
+			<input id="lblScore" class="text" type="text" /> </br>
+			</br> Number of monsters:
+			<input id="lblScore" class="text"  type="text" />
+	
+			<p><button style="font-size:15px;" class="button" type="button">Random</button></p>
+	
+		</form>
+	
+	</div>
+
+	<div id="sound"></div>
+
+	<div id="help">
+		<h2>Help</h2>
+		<table align="center" border="0" cellPadding="2" cellSpacing="0">
+			<tbody>
+				<tr>
+					<td>Arrow Left : </td>
+					<td>Move Left</td>
+				</tr>
+				<tr>
+					<td>Arrow Right : </td>
+					<td>Move Right</td>
+				</tr>
+				<tr>
+					<td>Arrow Down : </td>
+					<td>Move Down</td>
+				</tr>
+				<tr>
+					<td>Arrow Up : </td>
+					<td>Move Up</td>
+				</tr>
+				<tr>
+					<td colspan="2">&nbsp;</td>
+				</tr>
+				<tr>
+					<td>P : </td>
+					<td>PAUSE</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div id="home">
+		<div id="presentation">
+
+
+			<h1>pac-man</h1>
+
+
+			<canvas id="canvas-home-title-pacman"></canvas>
+
+
+			<div id="presentation-titles">Login to Start the Game</div>
+			<canvas id="canvas-presentation-blinky"></canvas>
+			<div id="presentation-character-blinky">- shadow</div>
+			<div id="presentation-name-blinky">"blinky"</div>
+			<canvas id="canvas-presentation-pinky"></canvas>
+			<div id="presentation-character-pinky">- speedy</div>
+			<div id="presentation-name-pinky">"pinky"</div>
+			<canvas id="canvas-presentation-inky"></canvas>
+			<div id="presentation-character-inky">- bashful</div>
+			<div id="presentation-name-inky">"inky"</div>
+			<canvas id="canvas-presentation-clyde"></canvas>
+			<div id="presentation-character-clyde">- pokey</div>
+			<div id="presentation-name-clyde">"clyde"</div>
+		</div>
+		<canvas id="trailer"></canvas>
+
+		<a class="sound" href="javascript:void(0);" data-sound="on"><img src="img/sound-on.png" alt="" border="0"></a>
+		
+	</div>
+	<p><button type="button" class="button" onClick="check()">Start New Game </button></p>
+
+
+	<div id="panel">
+		<h1>pac-man</h1>
+		<a class="putchu" target="_top"  height="65px" alt="Putchu">Username</a>
+		<canvas id="canvas-panel-title-pacman"></canvas>
+		<div id="score">
+			<h2>1UP</h2><span>00</span>
+		</div>
+	
+		<div id="board">
+			<canvas id="canvas-board"></canvas>
+			<canvas id="canvas-paths"></canvas>
+			<canvas id="canvas-bubbles"></canvas>
+			<canvas id="canvas-fruits"></canvas>
+			<canvas id="canvas-pacman"></canvas>
+			<canvas id="canvas-ghost-blinky"></canvas>
+			<canvas id="canvas-ghost-pinky"></canvas>
+			<canvas id="canvas-ghost-inky"></canvas>
+			<canvas id="canvas-ghost-clyde"></canvas>
+			<div id="control-up-big"></div>
+			<div id="control-down-big"></div>
+			<div id="control-left-big"></div>
+			<div id="control-right-big"></div>
+		</div>
+		<div id="control">
+			<div id="control-up"></div>
+			<div id="control-up-second"></div>
+			<div id="control-down"></div>
+			<div id="control-down-second"></div>
+			<div id="control-left"></div>
+			<div id="control-right"></div>
+		</div>
+		<div class="Lives-button">Lives:   <canvas id="canvas-lifes"></canvas></div>
+
+		
+		<canvas id="canvas-level-fruits"></canvas>
+		<div id="message"></div>
+		<div class="help-button">- help -</div>
+		<a class="sound" href="javascript:void(0);" data-sound="on"><img src="img/sound-on.png" alt="" border="0"></a>
+	</div>
+
+
+</body>
+<html>
